@@ -1,0 +1,25 @@
+# Copy to .dev.vars.staging (and .dev.vars.prod) and fill in. Those files are gitignored; this example is committed.
+# `npm run dev` uses .dev.vars.staging.
+# Deployed envs: write the same keys to .secrets.<env>.json ({"KEY":"value"}) and run `npm run secrets:<env>`.
+
+# --- WordPress (Step 1) ---
+# WP user login + Application Password (Users -> Profile -> Application Passwords).
+# Paste the password with or without spaces.
+WP_USERNAME=
+WP_APP_PASSWORD=
+
+# --- Spacebring (Step 2) ---
+# Network Settings -> Developers
+SPACEBRING_CLIENT_ID=
+SPACEBRING_CLIENT_SECRET=
+# Location to sync events from (from sb.locations.list())
+SPACEBRING_LOCATION_REF=
+# Public event URL prefix; event id is appended: ${SPACEBRING_EVENT_URL_BASE}/${event.id}
+SPACEBRING_EVENT_URL_BASE=
+
+# --- Webhooks (Step 3) ---
+SPACEBRING_WEBHOOK_SECRET=
+
+
+# Optional (defaults to publish; wrangler.jsonc sets it per env): publish | private | draft
+# WP_POST_STATUS=private

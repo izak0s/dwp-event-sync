@@ -35,3 +35,10 @@ lerna-debug.log*
 .dev.vars*
 !.dev.vars.example
 !.env.example
+
+.idea
+.vscode
+.wrangler
+
+# per-env secret files for `wrangler secret bulk`
+.secrets.*.json

@@ -1,5 +1,10 @@
 /**
- * For more details on how to configure Wrangler, refer to:
+ * Wrangler configuration. Two environments:
+ *   staging -> dwp-event-sync-staging  (test Spacebring network + dev WordPress site)
+ *   prod    -> dwp-event-sync-prod     (live Spacebring network + live WordPress site)
+ *
+ * Always pass --env; the top-level name is never deployed.
+ * Secrets: `wrangler secret bulk <file> --env <env>` (see README). Local dev reads `.dev.vars.<env>`.
  * https://developers.cloudflare.com/workers/wrangler/configuration/
  */
 {
@@ -7,35 +12,31 @@
 	"name": "dwp-event-sync",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-09-11",
-	"assets": {
-		"binding": "ASSETS",
-		"directory": "./public"
-	},
 	"observability": {
 		"enabled": true
 	},
-	"upload_source_maps": true
-	/**
-	 * Smart Placement
-	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
-	 */
-	// "placement": {  "mode": "smart" }
-	/**
-	 * Bindings
-	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
-	 * databases, object storage, AI inference, real-time communication and more.
-	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
-	 */
-	/**
-	 * Environment Variables
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
-	 * Note: Use secrets to store sensitive data.
-	 * https://developers.cloudflare.com/workers/configuration/secrets/
-	 */
-	// "vars": {  "MY_VARIABLE": "production_value" }
-	/**
-	 * Service Bindings (communicate between multiple Workers)
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
-	 */
-	// "services": [  {   "binding": "MY_SERVICE",   "service": "my-service"  } ]
+	"upload_source_maps": true,
+	// Nightly reconcile (add/update only) as a safety net for missed webhooks. 02:00 UTC = 03:00/04:00 Amsterdam.
+	// `triggers` is not inherited by environments, so it is repeated per env below.
+	"env": {
+		"staging": {
+			"name": "dwp-event-sync-staging",
+			"triggers": { "crons": ["0 2 * * *"] },
+			"vars": {
+				"WP_BASE_URL": "https://werkplek.wptwantemp.nl",
+				"WP_POST_STATUS": "private",
+				"SITE_TIMEZONE": "Europe/Amsterdam"
+			}
+		},
+		"prod": {
+			"name": "dwp-event-sync-prod",
+			"triggers": { "crons": ["0 2 * * *"] },
+			"vars": {
+				// TODO: switch to https://de-werkplek.nl when the live site is ready. Until then prod writes to the dev site too.
+				"WP_BASE_URL": "https://werkplek.wptwantemp.nl",
+				"WP_POST_STATUS": "publish",
+				"SITE_TIMEZONE": "Europe/Amsterdam"
+			}
+		}
+	}
 }

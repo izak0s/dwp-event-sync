@@ -2,15 +2,27 @@
   "name": "dwp-event-sync",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy --minify",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+    "dev": "wrangler dev --env staging --port 8799",
+    "deploy:staging": "wrangler deploy --env staging --minify",
+    "deploy:prod": "wrangler deploy --env prod --minify",
+    "secrets:staging": "wrangler secret bulk .secrets.staging.json --env staging",
+    "secrets:prod": "wrangler secret bulk .secrets.prod.json --env prod",
+    "tail:staging": "wrangler tail --env staging --format pretty",
+    "tail:prod": "wrangler tail --env prod --format pretty",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "hono": "^4.13.7"
+    "@izak0s/spacebring-api": "^9.1.0",
+    "hono": "^4.13.7",
+    "marked": "^18.0.12",
+    "svix": "^2.5.0"
   },
   "devDependencies": {
     "@types/node": "^22.20.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0",
     "wrangler": "^4.131.1"
   }
 }

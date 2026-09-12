@@ -1,0 +1,81 @@
+# CI/CD for the dwp-event-sync Worker.
+#
+#   pull_request        -> typecheck + tests
+#   push to main        -> typecheck + tests, then deploy to staging (dwp-event-sync-staging)
+#   tag v*              -> typecheck + tests, then deploy to prod    (dwp-event-sync-prod)
+#
+# Only the Worker code and `vars` from wrangler.jsonc are deployed here. Worker secrets
+# (WordPress / Spacebring credentials, tokens) are set once by a human with
+# `npm run secrets:<env>` and are never touched by this workflow.
+#
+# Required GitHub repository secrets:
+#   CLOUDFLARE_API_TOKEN   - token with "Workers Scripts: Edit" (template: "Edit Cloudflare Workers")
+#   CLOUDFLARE_ACCOUNT_ID  - from `npx wrangler whoami`
+
+name: Deploy
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Typecheck & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  deploy-staging:
+    name: Deploy staging
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://dwp-event-sync-staging.izak.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --env staging --minify
+
+  deploy-prod:
+    name: Deploy production
+    needs: test
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://dwp-event-sync-prod.izak.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --env prod --minify
